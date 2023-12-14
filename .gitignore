@@ -1,0 +1,6 @@
+# Ignore Compiled/Generated Files
+*.class
+
+# Ignore IDE-Specific Files
+.idea/
+*.iml
