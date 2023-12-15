@@ -1,22 +1,32 @@
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestUtils {
 
+    public static final UUID SAMPLE_SERVICE_RESULT_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+    public static final Date SAMPLE_SERVICE_RESULT_DATE = Date.from(Instant.parse("1111-11-11T11:11:11.111Z"));
+
     public static final String SAMPLE_SERVICE_RESULT_MESSAGE = "Test Sample Service Result Message";
 
-    public static final String EXPECTED_SERVICE_RESULT_MESSAGE_PATTERN = "(?i)^ServiceResult: \\[id: [a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}, date: [a-z]{3} [a-z]{3} \\d{2} \\d{2}:\\d{2}:\\d{2} [a-z]{3} \\d{4,}, message: %s]$";
+    public static final String EXPECTED_SERVICE_RESULT_MESSAGE_PATTERN = "(?i)^ServiceResult: \\[id: [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}, date: [a-z]{3} [a-z]{3} \\d{2} \\d{2}:\\d{2}:\\d{2} [a-z]{3} \\d{4,}, message: %s]$";
 
     public static final ServiceResult SERVICE_RESULT_WITH_NO_MESSAGE = ServiceResult.createServiceResult();
     public static final ServiceResult SERVICE_RESULT_WITH_NULL_MESSAGE = ServiceResult.createServiceResult(null);
@@ -47,6 +57,63 @@ public class TestUtils {
                 && serviceResult.getDate() != null;
     }
 
+    public static void setObjectFieldValue(Object targetObject, String targetFieldName, Object targetValue) {
+        if (targetObject == null) {
+            throw new IllegalArgumentException(
+                    "Unable to set a field value on a null target object: [targetObject=null]"
+            );
+        }
+        if (targetFieldName == null || targetFieldName.isBlank()) {
+            throw new IllegalArgumentException(
+                    String.format("Unable to set a field value for an undefined target field name: [targetFieldName=%s]", targetFieldName)
+            );
+        }
+        if (Arrays.stream(targetObject.getClass().getDeclaredFields()).noneMatch(f -> f.getName().equals(targetFieldName))) {
+            throw new IllegalArgumentException(
+                    String.format("Unable to set a field value for a non-existent target field name: [targetFieldName=%s, detectedFieldNames=%s]", targetFieldName, Arrays.stream(targetObject.getClass().getDeclaredFields()).map(Field::getName).toList())
+            );
+        }
+
+        try {
+            Field field = targetObject.getClass().getDeclaredField(targetFieldName);
+
+            if (targetValue != null && !field.getType().isAssignableFrom(targetValue.getClass())) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Unable to set an invalid field value type for target field name: [targetFieldName=%s, targetValue=%s, targetValueType=%s, detectedValueType=%s]",
+                                targetFieldName,
+                                targetValue,
+                                targetValue.getClass(),
+                                field.getType()
+                        )
+                );
+            }
+
+            field.setAccessible(true);
+            field.set(targetObject, targetValue);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    String.format(
+                            "An error occurred when trying to set a field value on the target object: %s: %s",
+                            String.format("[targetObject=%s, targetFieldName=%s, targetValue=%s]", targetObject, targetFieldName, targetValue),
+                            e.getMessage()
+                    )
+            );
+        }
+    }
+
+    @Test
+    public void verifySampleServiceResultId() {
+        assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000000"), SAMPLE_SERVICE_RESULT_ID);
+    }
+
+    @Test
+    public void verifySampleServiceResultDate() {
+        assertEquals(Date.from(Instant.parse("1111-11-11T11:11:11.111Z")), SAMPLE_SERVICE_RESULT_DATE);
+    }
+
     @Test
     public void verifySampleServiceResultMessage() {
         assertEquals("Test Sample Service Result Message", SAMPLE_SERVICE_RESULT_MESSAGE);
@@ -54,7 +121,7 @@ public class TestUtils {
 
     @Test
     public void verifyExpectedServiceResultMessagePattern() {
-        assertEquals("(?i)^ServiceResult: \\[id: [a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}, date: [a-z]{3} [a-z]{3} \\d{2} \\d{2}:\\d{2}:\\d{2} [a-z]{3} \\d{4,}, message: %s]$", EXPECTED_SERVICE_RESULT_MESSAGE_PATTERN);
+        assertEquals("(?i)^ServiceResult: \\[id: [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}, date: [a-z]{3} [a-z]{3} \\d{2} \\d{2}:\\d{2}:\\d{2} [a-z]{3} \\d{4,}, message: %s]$", EXPECTED_SERVICE_RESULT_MESSAGE_PATTERN);
     }
 
     @Test
@@ -177,5 +244,105 @@ public class TestUtils {
                 fail(e);
             }
         });
+    }
+
+    @Test
+    void setObjectFieldValueWithNullTargetObject() {
+        Exception exceptionForNullTargetObject = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue(null, "targetFieldName", "targetValue")
+        );
+        assertEquals("Unable to set a field value on a null target object: [targetObject=null]", exceptionForNullTargetObject.getMessage());
+    }
+
+    @Test
+    void setObjectFieldValueWithNullTargetFieldName() {
+        Exception exceptionForNullTargetFieldName = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue("targetObject", null, "targetValue")
+        );
+        assertEquals("Unable to set a field value for an undefined target field name: [targetFieldName=null]", exceptionForNullTargetFieldName.getMessage());
+    }
+
+    @Test
+    void setObjectFieldValueWithEmptyTargetFieldName() {
+        Exception exceptionForEmptyTargetFieldName = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue("targetObject", "", "targetValue")
+        );
+        assertEquals("Unable to set a field value for an undefined target field name: [targetFieldName=]", exceptionForEmptyTargetFieldName.getMessage());
+    }
+
+    @Test
+    void setObjectFieldValueWithBlankTargetFieldName() {
+        Exception exceptionForBlankTargetFieldName = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue("targetObject", " ", "targetValue")
+        );
+        assertEquals("Unable to set a field value for an undefined target field name: [targetFieldName= ]", exceptionForBlankTargetFieldName.getMessage());
+    }
+
+    @Test
+    void setObjectFieldValueWithNonExistentTargetFieldName() {
+        ServiceResult targetObject = ServiceResult.createServiceResult();
+
+        List<String> targetObjectDetectedFieldNames = Arrays.stream(targetObject.getClass().getDeclaredFields()).map(Field::getName).toList();
+        final String targetFieldNameNonExistent = "targetFieldNameNonExistent";
+
+        Exception exceptionForNonExistentTargetFieldName = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue(targetObject, targetFieldNameNonExistent, "targetValue")
+        );
+        assertEquals(
+                String.format(
+                        "Unable to set a field value for a non-existent target field name: [targetFieldName=%s, detectedFieldNames=%s]",
+                        targetFieldNameNonExistent,
+                        targetObjectDetectedFieldNames
+                ),
+                exceptionForNonExistentTargetFieldName.getMessage()
+        );
+    }
+
+    @Test
+    void setObjectFieldValueWithInvalidTargetValueType() {
+        ServiceResult targetObject = ServiceResult.createServiceResult();
+        String targetFieldName = "id";
+        String targetValue = "badTargetValue";
+
+        Exception exceptionForInvalidTargetValueType = assertThrows(
+                IllegalArgumentException.class,
+                () -> setObjectFieldValue(targetObject, targetFieldName, targetValue)
+        );
+        assertEquals(
+                String.format(
+                        "Unable to set an invalid field value type for target field name: [targetFieldName=%s, targetValue=%s, targetValueType=%s, detectedValueType=%s]",
+                        targetFieldName,
+                        targetValue,
+                        targetValue.getClass(),
+                        UUID.class
+                ),
+                exceptionForInvalidTargetValueType.getMessage()
+        );
+    }
+
+    @Test
+    void setObjectFieldValueWithNullValue() {
+        ServiceResult targetObject = ServiceResult.createServiceResult();
+        assertNotNull(targetObject.getId());
+        setObjectFieldValue(targetObject, "id", null);
+        assertNull(targetObject.getId());
+    }
+
+    @Test
+    void setObjectFieldValueWithNewValue() {
+        ServiceResult targetObject = ServiceResult.createServiceResult();
+        UUID targetObjectId = targetObject.getId();
+        assertNotNull(targetObjectId);
+        assertEquals(targetObjectId, targetObject.getId());
+        UUID targetObjectIdNew = UUID.randomUUID();
+        assertNotEquals(targetObjectIdNew, targetObjectId);
+        setObjectFieldValue(targetObject, "id", targetObjectIdNew);
+        assertNotEquals(targetObjectId, targetObject.getId());
+        assertEquals(targetObjectIdNew, targetObject.getId());
     }
 }

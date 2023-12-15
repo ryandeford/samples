@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -7,8 +8,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -111,8 +114,6 @@ class ServiceResultTest {
 
     @Test
     void testToString() {
-        String expectedStringRegexTemplate = "(?i)^ServiceResult: \\[id: [a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}, date: [a-z]{3} [a-z]{3} \\d{2} \\d{2}:\\d{2}:\\d{2} [a-z]{3} \\d{4,}, message: %s]$";
-
         List.of(
                 TestUtils.SERVICE_RESULT_WITH_NO_MESSAGE,
                 TestUtils.SERVICE_RESULT_WITH_NULL_MESSAGE,
@@ -121,19 +122,48 @@ class ServiceResultTest {
         ).forEach(serviceResult -> {
             String serviceResultString = serviceResult.toString();
             assertInstanceOf(String.class, serviceResultString);
-            assertTrue(serviceResultString.matches(expectedStringRegexTemplate.formatted(serviceResult.getMessage())));
+            assertTrue(serviceResultString.matches(TestUtils.EXPECTED_SERVICE_RESULT_MESSAGE_PATTERN.formatted(serviceResult.getMessage())));
         });
     }
 
     @Test
     void testEquals() {
-        ServiceResult serviceResult = ServiceResult.createServiceResult();
+        ServiceResult serviceResult = ServiceResult.createServiceResult(TestUtils.SAMPLE_SERVICE_RESULT_MESSAGE);
         assertInstanceOf(ServiceResult.class, serviceResult);
 
-        ServiceResult serviceResultOther = ServiceResult.createServiceResult();
+        ServiceResult serviceResultOther = ServiceResult.createServiceResult(TestUtils.SAMPLE_SERVICE_RESULT_MESSAGE);
         assertInstanceOf(ServiceResult.class, serviceResultOther);
+        TestUtils.setObjectFieldValue(serviceResultOther, "date", TestUtils.SAMPLE_SERVICE_RESULT_DATE);
 
+        assertNotEquals(serviceResult.getId(), serviceResultOther.getId());
+        assertNotEquals(serviceResult.getDate(), serviceResultOther.getDate());
+        assertEquals(serviceResult.getMessage(), serviceResultOther.getMessage());
         assertNotEquals(serviceResult, serviceResultOther);
+
+        // Note: Some IDEs may suggest changing this to a standard not equals assertion, but we want to call the equals method directly
+        assertFalse(serviceResult.equals(serviceResultOther));
+
+        UUID customId = UUID.randomUUID();
+        Date customDate = Date.from(Instant.now());
+        String customMessage = "Test Custom Service Result Message";
+
+        ServiceResult serviceResultCustom1 = ServiceResult.createServiceResult(customMessage);
+        ServiceResult serviceResultCustom2 = ServiceResult.createServiceResult(customMessage);
+
+        List.of(serviceResultCustom1, serviceResultCustom2).forEach(serviceResultCustom -> {
+            TestUtils.setObjectFieldValue(serviceResultCustom, "id", customId);
+            TestUtils.setObjectFieldValue(serviceResultCustom, "date", customDate);
+            TestUtils.setObjectFieldValue(serviceResultCustom, "message", customMessage);
+        });
+
+        assertEquals(serviceResultCustom1.getId(), serviceResultCustom2.getId());
+        assertEquals(serviceResultCustom1.getDate(), serviceResultCustom2.getDate());
+        assertEquals(serviceResultCustom1.getMessage(), serviceResultCustom2.getMessage());
+        assertEquals(serviceResultCustom1, serviceResultCustom2);
+        assertNotSame(serviceResultCustom1, serviceResultCustom2);
+
+        // Note: Some IDEs may suggest changing this to a standard equals assertion, but we want to call the equals method directly
+        assertTrue(serviceResultCustom1.equals(serviceResultCustom2));
     }
 
     @Test
