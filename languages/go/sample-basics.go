@@ -6,31 +6,31 @@ import "fmt"
 func main() {
   fmt.Println("+++ Sample Basics in Go +++")
 
-  println("Generating sample slice of ints...")
+  println("Generating sample slice of ints:")
   sample_numbers := []int{1, 2, 3, 4, 5, 10, 100}
   println(stringify(sample_numbers))
 
-  println("Generating sample slice of strings...")
+  println("Generating sample slice of strings:")
   sample_strings := []string{"abc", "123", "xyz"}
   println(stringify(sample_strings))
 
-  println("Summing sample ints...")
+  println("Sum of sample ints:")
   sample_numbers_sum := sum(sample_numbers...)
   println(stringify(sample_numbers_sum))
 
-  println("Concatenating sample strings...")
+  println("Concatenation of sample strings:")
   sample_strings_concat := concat(sample_strings...)
   println(stringify(sample_strings_concat))
 
-  println("Building and running sample tests...")
+  println("Building and running sample tests:")
   type Test struct {
     name string
     expected interface{}
     actual interface{}
   }
   tests := []Test{
-    Test{name: "sample_numbers_sum", expected: 125, actual: sample_numbers_sum},
-    Test{name: "sample_string_concat", expected: "abc123xyz", actual: sample_strings_concat},
+    Test{name: "SumSampleTest", expected: 125, actual: sample_numbers_sum},
+    Test{name: "ConcatSampleTest", expected: "abc123xyz", actual: sample_strings_concat},
   }
   type TestResult struct {
     success bool
@@ -44,7 +44,7 @@ func main() {
       result.message = "PASSED!"
     } else {
       result.success = false
-      result.message = concat("FAILED!")
+      result.message = "FAILED!"
     }
     println(stringify(result))
   }
