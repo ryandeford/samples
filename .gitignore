@@ -4,3 +4,6 @@
 # Ignore IDE-Specific Files
 .idea/
 *.iml
+
+# Ignore Mac DS_Store Cache Files
+.DS_Store
