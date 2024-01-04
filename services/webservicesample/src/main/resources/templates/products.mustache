@@ -25,7 +25,7 @@
                 <td class="product-id">{{id}}</td>
                 <td>{{name}}</td>
                 <td>{{description}}</td>
-                <td>{{price}}</td>
+                <td class="product-price">{{price}}</td>
                 <td>
                     <button type="button" class="delete-product-button" data-product-id="{{id}}">Delete</button>
                 </td>
@@ -49,9 +49,22 @@
 <script>
     'use strict';
 
+    let currencyFormatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    });
+
+    formatPrices();
     bindRefreshProductsButton();
     bindDeleteProductButtons();
     bindCreateProductButton();
+
+    function formatPrices() {
+        let productPrices = document.querySelectorAll('.product-listing-table .product-entry .product-price');
+        [...productPrices].forEach((productPrice) => {
+            productPrice.innerHTML = currencyFormatter.format(productPrice.innerHTML);
+        })
+    }
 
     function bindRefreshProductsButton() {
         let refreshProductsButton = document.querySelector('.refresh-products-button');
@@ -69,7 +82,7 @@
                 let targetProductId = e.target.getAttribute('data-product-id');
                 deleteProduct(targetProductId);
             }
-        });
+        })
     }
 
     function bindCreateProductButton() {
@@ -119,7 +132,7 @@
         id.innerHTML = product.id;
         name.innerHTML = product.name;
         description.innerHTML = product.description;
-        price.innerHTML = product.price;
+        price.innerHTML = currencyFormatter.format(product.price);
         actions.innerHTML = `<button type="button" class="delete-product-button" data-product-id="${product.id}">Delete</button>`;
 
         bindDeleteProductButtons();
