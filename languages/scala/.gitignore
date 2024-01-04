@@ -1,0 +1,7 @@
+# Ignore Scala BSP and Project Build Files
+.bsp
+build.sbt
+project/
+
+# Ignore Output Directories Containing Generated Files
+target/
