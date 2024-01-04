@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample Web Service Application - Products</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>Product Management</h1>
+<div>
+    <h1>Current Products <button class="refresh-products-button">Refresh</button></h1>
+    <table class="product-listing-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#products}}
+            <tr class="product-entry" data-product-id="{{id}}">
+                <td class="product-id">{{id}}</td>
+                <td>{{name}}</td>
+                <td>{{description}}</td>
+                <td class="product-price">{{price}}</td>
+                <td>
+                    <button type="button" class="delete-product-button" data-product-id="{{id}}">Delete</button>
+                </td>
+            </tr>
+            {{/products}}
+        </tbody>
+    </table>
+</div>
+<div>
+    <h1>Create Product</h1>
+    <form action="/products" method="post" class="create-product-form" onsubmit="return false;" autocomplete="off">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" class="create-product-form-name"><br>
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" class="create-product-form-description"><br>
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price" class="create-product-form-price"><br>
+        <input type="submit" value="Create" class="create-product-form-submit-button">
+    </form>
+</div>
+<script>
+    'use strict';
+
+    let currencyFormatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    });
+
+    formatPrices();
+    bindRefreshProductsButton();
+    bindDeleteProductButtons();
+    bindCreateProductButton();
+
+    function formatPrices() {
+        let productPrices = document.querySelectorAll('.product-listing-table .product-entry .product-price');
+        [...productPrices].forEach((productPrice) => {
+            productPrice.innerHTML = currencyFormatter.format(productPrice.innerHTML);
+        })
+    }
+
+    function bindRefreshProductsButton() {
+        let refreshProductsButton = document.querySelector('.refresh-products-button');
+        refreshProductsButton.onclick = function(e) {
+            e.preventDefault();
+            getProducts();
+        }
+    }
+
+    function bindDeleteProductButtons() {
+        let deleteProductButtons = document.querySelectorAll('.delete-product-button');
+        [...deleteProductButtons].forEach((deleteProductButton) => {
+            deleteProductButton.onclick = function(e) {
+                e.preventDefault();
+                let targetProductId = e.target.getAttribute('data-product-id');
+                deleteProduct(targetProductId);
+            }
+        })
+    }
+
+    function bindCreateProductButton() {
+        let createProductButton = document.querySelector('.create-product-form-submit-button');
+        createProductButton.onclick = function(e) {
+            e.preventDefault();
+            let targetProductName = document.querySelector('.create-product-form-name').value;
+            let targetProductDescription = document.querySelector('.create-product-form-description').value;
+            let targetProductPrice = document.querySelector('.create-product-form-price').value;
+            createProduct(targetProductName, targetProductDescription, targetProductPrice);
+            clearCreateProductFormEntries();
+        }
+    }
+
+    function getProductListingTable() {
+        let productListingTable = document.querySelector('.product-listing-table');
+        return productListingTable;
+    }
+
+    function populateProductListingTable(products) {
+        let productListingTable = getProductListingTable();
+        let productListingTableBody = productListingTable.tBodies[0];
+
+        while(productListingTableBody.rows.length > 0) {
+            productListingTableBody.deleteRow(0);
+        }
+
+        products.forEach(product => {
+            addProductToProductListingTable(product);
+        })
+    }
+
+    function addProductToProductListingTable(product) {
+        let productListingTable = getProductListingTable();
+        let productListingTableBody = productListingTable.tBodies[0];
+
+        let row = productListingTableBody.insertRow(-1);
+        row.classList.add('product-entry');
+        row.setAttribute('data-product-id', product.id);
+
+        let id = row.insertCell(0);
+        let name = row.insertCell(1);
+        let description = row.insertCell(2);
+        let price = row.insertCell(3);
+        let actions = row.insertCell(4);
+
+        id.innerHTML = product.id;
+        name.innerHTML = product.name;
+        description.innerHTML = product.description;
+        price.innerHTML = currencyFormatter.format(product.price);
+        actions.innerHTML = `<button type="button" class="delete-product-button" data-product-id="${product.id}">Delete</button>`;
+
+        bindDeleteProductButtons();
+    }
+
+    function clearCreateProductFormEntries() {
+        [
+            '.create-product-form-name',
+            '.create-product-form-description',
+            '.create-product-form-price',
+        ].forEach(selector => {
+            document.querySelector(selector).value = '';
+        })
+    }
+
+    function createProduct(name, description, price) {
+        $.ajax({
+            url: '/api/products',
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                name: name,
+                description: description,
+                price: price,
+            }),
+            success: function(product) {
+                console.log(`Successfully created product: ${JSON.stringify(product)}`);
+                addProductToProductListingTable(product);
+            },
+            error: function(requestObject, errorStatus, errorThrown) {
+                console.log(
+                `Failed to create product: ${requestObject.status}: ${JSON.stringify(requestObject.responseJSON)}`
+                );
+            }
+        })
+    }
+
+    function getProducts() {
+        $.ajax({
+            url: `/api/products`,
+            type: 'get',
+            success: function(products) {
+                console.log(`Successfully fetched products: ${JSON.stringify(products)}`);
+                populateProductListingTable(products);
+            },
+            error: function(requestObject, errorStatus, errorThrown) {
+                console.log(`Failed to fetch products: ${errorStatus}: ${JSON.stringify(errorThrown)}`);
+            }
+        })
+    }
+
+    function deleteProduct(id) {
+        $.ajax({
+            url: `/api/products/${id}`,
+            type: 'delete',
+            success: function(product) {
+                console.log(`Successfully deleted product: ${JSON.stringify(product)}`);
+                let productListingTableEntry = document.querySelector(`.product-listing-table tr[data-product-id='${product.id}']`);
+                productListingTableEntry.remove();
+            },
+            error: function(requestObject, errorStatus, errorThrown) {
+                console.log(`Failed to delete product: ${id}: ${errorStatus}: ${JSON.stringify(errorThrown)}`);
+            }
+        })
+    }
+
+</script>
+</body>
+</html>
