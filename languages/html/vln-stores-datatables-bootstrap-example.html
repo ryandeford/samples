@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <!-- Include Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Assign Page Title -->
+    <title>VLN Stores</title>
+    
+    <!-- Include Bootstrap Styles Asset -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    
+    <!-- Include DataTables Styles Asset -->
+    <link href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap5.min.css" rel="stylesheet" crossorigin="anonymous">
+    
+    <!-- Custom Page CSS -->
+    <style media="screen">
+      body {
+        background-color: black;
+        color: gainsboro;
+      }
+      thead {
+        color: gainsboro;
+      }
+      tbody {
+        color: gainsboro;
+      }
+      h1 {
+        background-color: darkslategray;
+        border-style: solid;
+        border-color: darkcyan;
+        border-width: 0.1em;
+        border-radius: 1em;
+      }
+      a {
+        color: gold;
+      }
+      a:hover {
+        color: yellow;
+      }
+      select {
+        background-color: gainsboro !important;
+      }
+      input {
+        background-color: gainsboro !important;
+      }
+      .page-link {
+        color: black;
+        background-color: gainsboro !important;
+      }
+      li.active > .page-link {
+        color: maroon;
+      }
+    </style>
+  </head>
+  <body>
+    <nav id="navbar" class="navbar navbar-dark bg-dark navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">VLN Stores</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="https://tryvln.com" target="_blank">VLN Info</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Store Locator APIs
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="https://stockist.co/api/v1/u10982/locations/search?latitude=39.99905425&longitude=-105.2553319&distance=100" target="_blank">VLN Store Locator</a></li>
+                <li><a class="dropdown-item" href="https://www.circlek.com/stores_master.php?lat=41.875562&lng=-87.624421&services=&region=global&page=0&lang=en" target="_blank">Circle K Store Locator</a></li>
+                <li><a class="dropdown-item" href="https://cdn.shopify.com/s/files/1/0575/9614/9951/t/13/assets/sca.storelocatordata.json" target="_blank">TAAT Store Locator</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="https://api.7-eleven.com/v4/stores?lat=41.875562&lon=-87.624421&radius=50&curr_lat=41.875562&curr_lon=-87.624421&features=" target="_blank">7-11 Store Locator (requires authentication)</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <span id="vln-stores-last-updated-message" class="fst-italic"></span>
+      </div>
+    </nav>
+    
+    <div class="container text-center">
+      <div class="row">
+        <h1>
+          VLN Stores
+        </h1>
+        <h2>
+          <small class="text-muted">Store Search</small>
+        </h2>
+      </div>
+    </div>
+    <div class="container">
+      <p id="vln-stores-loading-message" class="text-center"><em>Loading VLN Stores...</em></p>
+      <div id="vln-stores-table-container" class="row" hidden>
+        <table id="vln-stores-table" class="table" style="width:100%">
+          <thead id="vln-stores-table-header">
+            <tr>
+              <th scope="col">Store Name</th>
+              <th scope="col">Address</th>
+              <th scope="col">City</th>
+              <th scope="col">State</th>
+              <th scope="col">Phone Number</th>
+            </tr>
+          </thead>
+          <tbody id="vln-stores-table-body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Include JQuery JavaScript Asset -->
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    
+    <!-- Include Bootstrap JavaScript Asset -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    
+    <!-- Include DataTables JavaScript Asset -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js" crossorigin="anonymous"></script>
+    
+    <!-- Custom Page JavaScript -->
+    <script>
+      // When the DOM is Fully Loaded
+      $(document).ready(function () {
+        // Initialize DataTables for VLN Stores Table
+        const dataTable = $('#vln-stores-table').DataTable();
+        
+        // Set Desired Store-Syncing Inverval Time (in milliseconds - 5 mins)
+        const syncInterval = 300000;
+        // Set Storage for Sync Job IDs
+        const syncJobIds = [];
+        // Fetch Loading Message Element
+        const loadingMessage = $('#vln-stores-loading-message');
+        // Fetch VLN Stores Table Container
+        const tableContainer = $('#vln-stores-table-container');
+        // Fetch Last Updated Message Element
+        const lastUpdatedMessage = $('#vln-stores-last-updated-message');
+        
+        // Create Set of Available Visibility States
+        const VISIBILITY_STATE = {
+          VISIBLE: 'VISIBLE',
+          HIDDEN: 'HIDDEN'
+        }
+        
+        // Create Set of Available UI States
+        const UI_STATE = {
+          LOADING: 'LOADING',
+          READY: 'READY'
+        }
+        
+        // Sets Element Visibility to Desired State
+        function setElementVisibilityState(element, state) {
+          switch(state) {
+            case VISIBILITY_STATE.VISIBLE:
+              // Remove Hidden Attribute from Element
+              element.removeAttr('hidden');
+              break;
+            case VISIBILITY_STATE.HIDDEN:
+              // Add Hidden Attribute to Element
+              element.attr('hidden', true);
+              break;
+            default:
+              console.error(`Invalid VISIBILITY_STATE change value detected: ${state}`);
+          }
+        }
+        
+        // Sets UI to Desired State
+        function setUIState(state) {
+          switch(state) {
+            case UI_STATE.LOADING:
+              // Show Loading Message and Hide VLN Stores Table Container
+              setElementVisibilityState(loadingMessage, VISIBILITY_STATE.VISIBLE);
+              setElementVisibilityState(tableContainer, VISIBILITY_STATE.HIDDEN);
+              break;
+            case UI_STATE.READY:
+              // Hide Loading Message and Unhide VLN Stores Table Container
+              setElementVisibilityState(loadingMessage, VISIBILITY_STATE.HIDDEN);
+              setElementVisibilityState(tableContainer, VISIBILITY_STATE.VISIBLE);
+              break;
+            default:
+              console.error(`Invalid UI_STATE change value detected: ${state}`);
+          }
+        }
+        
+        // Sets and Renders Last Updated Message
+        function setLastUpdatedMessage(lastUpdatedTime) {
+          lastUpdatedMessage.text(`Last Updated: ${lastUpdatedTime.toLocaleString()}`);
+          lastUpdatedMessage.show();
+          setTimeout(() => lastUpdatedMessage.fadeOut(1000), 5000);
+        }
+        
+        // Determines if UI is Actively Being Viewed in the Browser (or at least has active tab status)
+        function isUIVisible() {
+          return document.visibilityState === 'visible';
+        }
+        
+        // Clears All Scheduled Sync Jobs
+        function clearScheduledSyncJobs() {
+          syncJobIds.forEach(id => {
+            clearTimeout(id);
+          });
+          syncJobIds.length = 0;
+        }
+        
+        // Creates a Periodic Loop to Fetch and Render Store Data While Window is Actively Visible
+        function syncStoresWhileActivelyVisible() {
+          clearScheduledSyncJobs();
+          if (isUIVisible()) {
+            loadStores();
+            let syncJobId = setTimeout(syncStoresWhileActivelyVisible, syncInterval);
+            syncJobIds.push(syncJobId);
+          }
+        }
+        
+        // Fetches and Renders VLN Stores
+        function loadStores() {
+          console.log(`Starting VLN Store Loading Process: ${new Date()}`);
+          
+          // Set UI State to 'LOADING'
+          setUIState(UI_STATE.LOADING);
+          
+          // Clear All VLN Stores Data in DataTables
+          dataTable.clear();
+          
+          // Fetch Stores from API and Add Table Data
+          $.get('https://stockist.co/api/v1/u10982/locations/search?latitude=39.99905425&longitude=-105.2553319&distance=100', function(stores, status) {
+            for (store of stores.locations) {
+              dataTable.row.add(
+                [
+                  `${store.website ? '<a href="' + store.website + '">' + store.name + '</a>' : store.name}`,
+                  `<a href="https://maps.google.com/?q=${store.name}, ${store.address_line_1}, ${store.city}, ${store.state}, ${store.postal_code}" target="_blank">${store.address_line_1}</a>`,
+                  `${store.city}`,
+                  `${store.state}`,
+                  `${store.phone ? '<a href="tel:' + store.phone.replace(/[()]/g, '').replace(/\s+/, '-') + '">' + store.phone + '</a>' : 'N/A'}`
+                ]
+              );
+            }
+            
+            // Render Table Markup from DataTables
+            dataTable.draw();
+            
+            // Set UI State to 'READY'
+            setUIState(UI_STATE.READY);
+            
+            // Show Last Updated Message
+            setLastUpdatedMessage(new Date());
+          });
+        }
+        
+        // Create Event Listener to Detect Any Window Visibility Changes and Continue Store Synchronization If UI is Visible
+        document.addEventListener('visibilitychange', () => {
+          if (isUIVisible()) {
+            syncStoresWhileActivelyVisible();
+          }
+        });
+        
+        // Kick Off Store Synchronization Process When Page First Loads
+        syncStoresWhileActivelyVisible();
+      });
+    </script>
+  </body>
+</html>
