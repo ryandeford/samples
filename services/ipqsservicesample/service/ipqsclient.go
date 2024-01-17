@@ -157,5 +157,5 @@ func main() {
     c.JSON(200, json.RawMessage(response))
   })
   
-  router.Run(":8081") // listen and serve on 0.0.0.0:8080
+  router.Run(":8081")
 }
