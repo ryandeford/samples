@@ -10,7 +10,7 @@ import (
 )
 
 type PathBindings struct {
-	Email string `uri:"email"`
+  Email string `uri:"email"`
   Phone string `uri:"phone"`
   URL string `uri:"url"`
   IP string `uri:"ip"`
@@ -48,7 +48,7 @@ func main() {
   router.Use(cors.New(config))
   
   router.GET("/ipqs/api/key", func(c *gin.Context) {
-		c.JSON(200, gin.H{
+    c.JSON(200, gin.H{
       "key": apiKey,
     })
   })
@@ -73,7 +73,7 @@ func main() {
     
     apiKey = key.Key
     
-		c.JSON(200, gin.H{
+    c.JSON(200, gin.H{
       "key": apiKey,
     })
   })
@@ -87,12 +87,12 @@ func main() {
   
   router.GET("/ipqs/score/email/:email", func(c *gin.Context) {
     var pathBindings PathBindings
-		if err := c.ShouldBindUri(&pathBindings); err != nil {
-			c.JSON(400, gin.H{
+    if err := c.ShouldBindUri(&pathBindings); err != nil {
+      c.JSON(400, gin.H{
         "error": err,
       })
-			return
-		}
+      return
+    }
     response, err := executeRequest(fmt.Sprintf("%s/email/%s/%s", apiBase, apiKey, pathBindings.Email))
     if err != nil {
       c.JSON(500, gin.H{
@@ -100,17 +100,17 @@ func main() {
       })
       return
     }
-		c.JSON(200, json.RawMessage(response))
+    c.JSON(200, json.RawMessage(response))
   })
   
   router.GET("/ipqs/score/phone/:phone", func(c *gin.Context) {
     var pathBindings PathBindings
-		if err := c.ShouldBindUri(&pathBindings); err != nil {
-			c.JSON(400, gin.H{
+    if err := c.ShouldBindUri(&pathBindings); err != nil {
+      c.JSON(400, gin.H{
         "error": err,
       })
-			return
-		}
+      return
+    }
     response, err := executeRequest(fmt.Sprintf("%s/phone/%s/%s", apiBase, apiKey, pathBindings.Phone))
     if err != nil {
       c.JSON(500, gin.H{
@@ -118,17 +118,17 @@ func main() {
       })
       return
     }
-		c.JSON(200, json.RawMessage(response))
+    c.JSON(200, json.RawMessage(response))
   })
   
   router.GET("/ipqs/score/url/:url", func(c *gin.Context) {
     var pathBindings PathBindings
-		if err := c.ShouldBindUri(&pathBindings); err != nil {
-			c.JSON(400, gin.H{
+    if err := c.ShouldBindUri(&pathBindings); err != nil {
+      c.JSON(400, gin.H{
         "error": err,
       })
-			return
-		}
+      return
+    }
     response, err := executeRequest(fmt.Sprintf("%s/url/%s/%s", apiBase, apiKey, pathBindings.URL))
     if err != nil {
       c.JSON(500, gin.H{
@@ -136,17 +136,17 @@ func main() {
       })
       return
     }
-		c.JSON(200, json.RawMessage(response))
+    c.JSON(200, json.RawMessage(response))
   })
   
   router.GET("/ipqs/score/ip/:ip", func(c *gin.Context) {
     var pathBindings PathBindings
-		if err := c.ShouldBindUri(&pathBindings); err != nil {
-			c.JSON(400, gin.H{
+    if err := c.ShouldBindUri(&pathBindings); err != nil {
+      c.JSON(400, gin.H{
         "error": err,
       })
-			return
-		}
+      return
+    }
     response, err := executeRequest(fmt.Sprintf("%s/ip/%s/%s", apiBase, apiKey, pathBindings.IP))
     if err != nil {
       c.JSON(500, gin.H{
@@ -154,7 +154,7 @@ func main() {
       })
       return
     }
-		c.JSON(200, json.RawMessage(response))
+    c.JSON(200, json.RawMessage(response))
   })
   
   router.Run(":8081") // listen and serve on 0.0.0.0:8080
