@@ -89,10 +89,10 @@ func createMultiTypeSlice(values ...any) []any {
 
 func createMultiTypeSliceTests() {
   if !reflect.DeepEqual(createMultiTypeSlice(), []any{}) {
-    panic("createSlice created an incorrect value for empty list")
+    panic("createMultiTypeSlice created an incorrect value for empty list")
   }
   if !reflect.DeepEqual(createMultiTypeSlice(1,1.0,'a',"test"), []any{1,1.0,'a',"test"}) {
-    panic("createSlice created an incorrect value for multi-type list")
+    panic("createMultiTypeSlice created an incorrect value for multi-type list")
   }
 }
 
